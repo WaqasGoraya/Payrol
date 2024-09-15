@@ -1,6 +1,6 @@
 <?php
 session_start(); // Start the session
-require_once('./db_conn.php');
+
 
 // Set session timeout duration (e.g., 10 seconds for messages)
 $timeout_duration = 10;
@@ -21,7 +21,7 @@ if (isset($_SESSION['MESSAGE_TIME'])) {
 
 // This part is only for the logged-in session, independent of message sessions
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    header("Location:" .BASE_URL. "login.php");
+    header("Location: login.php");
     exit;
 }
 

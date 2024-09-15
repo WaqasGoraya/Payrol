@@ -1,5 +1,6 @@
 <?php
 // Database connection
+require_once('../sessions.php');
 require_once('../connection/conn.php');
 
 // Fetch all leave requests

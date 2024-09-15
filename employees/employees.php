@@ -1,6 +1,7 @@
 <?php
 // Database connection
 require_once("../connection/conn.php");
+require_once("../sessions.php");
 
 // Fetch employees data
 $sql = "SELECT employees.id, employees.first_name, employees.last_name, departments.name as department_name, locations.name as location_name 

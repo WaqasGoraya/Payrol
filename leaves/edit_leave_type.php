@@ -1,6 +1,7 @@
 <?php
 // include database connection
 require_once('../connection/conn.php');
+require_once('../sessions.php');
 
 // Fetch leave type data from database
 // Fetch leave type ID from URL

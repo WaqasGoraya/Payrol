@@ -1,7 +1,7 @@
 <?php
 // Database connection
-require_once('../connection/conn.php');
 require_once('../sessions.php');
+require_once('../connection/conn.php');
 
 // Fetch departments data
 $sql = "SELECT id, name FROM departments";

@@ -10,7 +10,7 @@ $conn = new mysqli($host, $user, $pass, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
+require_once('../sessions.php');
 // Fetch leave request details by ID
 $leaveId = $_GET['id'];
 $sql = "SELECT * FROM leave_requests WHERE id = ?";

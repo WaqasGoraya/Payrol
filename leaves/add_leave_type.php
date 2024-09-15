@@ -1,5 +1,6 @@
-<?php
-require('../connection/conn.php');
+<?php 
+require_once('../sessions.php');
+require('../connection/conn.php'); 
 ?>
 
 <!DOCTYPE html>

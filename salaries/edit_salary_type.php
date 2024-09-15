@@ -1,6 +1,7 @@
 <?php
 // Include database connection
 require_once('../connection/conn.php');
+require_once('./sessions.php');
 
 // Get the salary type ID from the URL
 $salary_type_id = isset($_GET['id']) ? $_GET['id'] : '';

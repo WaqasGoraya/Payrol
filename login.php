@@ -1,3 +1,7 @@
+<?php 
+// require_once('./sessions.php');
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

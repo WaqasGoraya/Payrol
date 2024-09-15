@@ -13,6 +13,7 @@
         <div class="row">
             <div class="col-md-12 text-center">
                 <h1 class="mb-4">Admin Dashboard</h1>
+                <a href="./logout.php" class="btn btn-info">Log Out</a>
                 <p class="lead">Manage your application easily with these options</p>
             </div>
         </div>

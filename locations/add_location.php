@@ -1,4 +1,7 @@
-<?php require_once('../connection/conn.php');?>
+<?php 
+require_once('../sessions.php');
+require('../connection/conn.php'); 
+?>
 <!DOCTYPE html>
 <html lang="en">
 
