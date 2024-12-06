@@ -1,4 +1,5 @@
 <?php
+session_start();
 // Database connection
 require_once('./connection/conn.php');
 require_once('send_email.php');
@@ -40,23 +41,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $attachmentTmp = $_FILES['attachment']['tmp_name'];
     $attachmentPath = 'leaves/uploads/' . basename($attachment);
     move_uploaded_file($attachmentTmp, $attachmentPath);
+    
+    if($supervisor == '' || $supervisor_email == ''){
+        $_SESSION['message_type'] = 'danger';
+        $_SESSION['message'] = 'You cannt apply leave because supervisor is not assigned!';
+        header("Location: {$_SERVER['HTTP_REFERER']}"); // Redirects back to the previous page
+        exit;
+    }
+    // get remaining leaves 
+    $leaveQuery = "SELECT remainig_leaves FROM total_leaves WHERE employee_id = $employeeID";
+    $leaves = $conn->query($leaveQuery)->fetch_assoc();
+    $remainingLeaves = $leaves['remainig_leaves'];
 
 
+    if ($remainingLeaves <= 0) {
+        $_SESSION['message_type'] = 'danger';
+        $_SESSION['message'] = 'Your leave balance is 0!';
+        header("Location: {$_SERVER['HTTP_REFERER']}"); // Redirects back to the previous page
+        exit;
+    };
+
+    // get employee name
     $emailQuery = "SELECT * FROM employee WHERE id = $employeeID";
     $employee = $conn->query($emailQuery)->fetch_assoc();
 
-    $employeeName = $employee['first_name'] .' '. $employee['last_name'];
+    $employeeName = $employee['first_name'] . ' ' . $employee['last_name'];
 
 
-    sendLeaveNotification($supervisor_email,$supervisor,$employeeID,$employeeName,$total_days,$leaveType,$startDate,$endDate);
+    sendLeaveNotification($supervisor_email, $supervisor, $employeeID, $employeeName, $total_days, $leaveType, $startDate, $endDate);
 
     // Save form data to the database and send email, etc.
     $stmt = $conn->prepare("INSERT INTO leave_requests (employee_id, supervisor, leave_type, reason, start_date, end_date, attachment,total_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('ssssssss', $employeeID, $supervisor, $leaveType, $reason, $startDate, $endDate, $attachment,$total_days);
+    $stmt->bind_param('ssssssss', $employeeID, $supervisor, $leaveType, $reason, $startDate, $endDate, $attachment, $total_days);
     $stmt->execute();
     $stmt->close();
-
-    echo "<div class='alert alert-success text-center'>Leave request submitted successfully!</div>";
+    $_SESSION['message_type'] = 'success';
+    $_SESSION['message'] = 'Leave request submitted successfully!';
+    header("Location: {$_SERVER['HTTP_REFERER']}"); // Redirects back to the previous page
+    exit;
 }
 
 $conn->close();
@@ -64,6 +86,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -74,6 +97,7 @@ $conn->close();
             background-color: #f8f9fa;
             font-family: Arial, sans-serif;
         }
+
         .container {
             max-width: 600px;
             margin: 50px auto;
@@ -82,23 +106,29 @@ $conn->close();
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .form-label {
             font-weight: bold;
             color: #333;
         }
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             border-radius: 5px;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
+
         .btn-primary:hover {
             background-color: #0056b3;
         }
+
         .form-header {
             text-align: center;
             margin-bottom: 20px;
@@ -106,8 +136,19 @@ $conn->close();
         }
     </style>
 </head>
+
 <body>
     <div class="container">
+        <?php
+        
+
+        if (isset($_SESSION['message'])) {
+            $messageType = $_SESSION['message_type'] ?? 'info';
+            echo "<div class='alert alert-$messageType text-center'>{$_SESSION['message']}</div>";
+            unset($_SESSION['message'], $_SESSION['message_type']); // Clear the message after displaying it
+        }
+        ?>
+
         <h2 class="form-header">Leave Request Form</h2>
         <form action="" method="post" enctype="multipart/form-data">
             <input type="hidden" name="supervisor_email" id="supervisor_email">
@@ -116,8 +157,8 @@ $conn->close();
                 <label for="employee_name" class="form-label">Employee Name</label>
                 <select class="form-select" id="employee_id" name="employee_id" required>
                     <option value="">Select Employee Name</option>
-                <?php foreach ($employees as $employee): ?>
-                        <option value="<?= htmlspecialchars($employee['id']) ?>" data-supervisor="<?= htmlspecialchars($employee['supervisor_id']) ?>"><?= htmlspecialchars($employee['first_name'] .' '. $employee['last_name']) ?></option>
+                    <?php foreach ($employees as $employee): ?>
+                        <option value="<?= htmlspecialchars($employee['id']) ?>" data-supervisor="<?= htmlspecialchars($employee['supervisor_id']) ?>"><?= htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -129,7 +170,7 @@ $conn->close();
                 <label for="leave_type" class="form-label">Leave Type</label>
                 <select class="form-select" id="leave_type" name="leave_type" required>
                     <option value="">Select Leave Type</option>
-                <?php foreach ($leaveTypes as $type): ?>
+                    <?php foreach ($leaveTypes as $type): ?>
                         <option value="<?= htmlspecialchars($type['id']) ?>"><?= htmlspecialchars($type['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -157,44 +198,47 @@ $conn->close();
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
-        $('#employee_id').on('change',function(){
+        $('#employee_id').on('change', function() {
             let empId = $('option:selected').attr('data-supervisor')
 
             // AJAX request to call the PHP script
-    $.ajax({
-        url: 'connection/conn.php',
-        type: 'GET',
-        data: { empId: empId },
-        success: function(response) {
-            let data = JSON.parse(response);
-            $("#supervisor").val(data.name)
-            $("#supervisor_email").val(data.email)
-        },
-        error: function() {
-            console.log("Error retrieving supervisor name.");
-        }
-    });
+            $.ajax({
+                url: 'connection/conn.php',
+                type: 'GET',
+                data: {
+                    empId: empId
+                },
+                success: function(response) {
+                    let data = JSON.parse(response);
+                    $("#supervisor").val(data.name)
+                    $("#supervisor_email").val(data.email)
+                },
+                error: function() {
+                    console.log("Error retrieving supervisor name.");
+                }
+            });
         });
-        $('#end_date').on('change', function () {
-        const startDate = new Date(document.getElementById('start_date').value);
-        if(startDate == 'Invalid Date' || startDate == undefined){
-            alert('Please Select Start Date First!')
-            $('#end_date').val(null);
-        }else{
-        const endDate = new Date(this.value);
-        
-        // Calculate the difference in days
-        const diffInTime = endDate - startDate;
-        const diffInDays = diffInTime / (1000 * 60 * 60 * 24) + 1;
+        $('#end_date').on('change', function() {
+            const startDate = new Date(document.getElementById('start_date').value);
+            if (startDate == 'Invalid Date' || startDate == undefined) {
+                alert('Please Select Start Date First!')
+                $('#end_date').val(null);
+            } else {
+                const endDate = new Date(this.value);
 
-        // Set the calculated days in the leave_days field
-        if (diffInDays > 0) {
-            $('#total_days').val(diffInDays);
-        } else {
-            $('#total_days').val(0);
-        }
-    }
-    });
+                // Calculate the difference in days
+                const diffInTime = endDate - startDate;
+                const diffInDays = diffInTime / (1000 * 60 * 60 * 24) + 1;
+
+                // Set the calculated days in the leave_days field
+                if (diffInDays > 0) {
+                    $('#total_days').val(diffInDays);
+                } else {
+                    $('#total_days').val(0);
+                }
+            }
+        });
     </script>
 </body>
+
 </html>

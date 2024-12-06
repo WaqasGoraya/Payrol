@@ -20,7 +20,7 @@ $employeeResult = mysqli_query($conn, $employeeQuery);
 $userData = mysqli_fetch_assoc($employeeResult);
 
 // fetch leaves availed
-$remaining_leaves_query = "SELECT leaves_availed FROM leaves WHERE employee_id = $employee_id LIMIT 1";
+$remaining_leaves_query = "SELECT leaves_availed FROM total_leaves WHERE employee_id = $employee_id";
 $remaining_leaves = $conn->query($remaining_leaves_query)->fetch_assoc();
 
 // Initialize an array to store existing leave counts
@@ -76,7 +76,7 @@ while ($row = mysqli_fetch_assoc($existingLeavesResult)) {
 
             <!-- Total Leaves and Leaves Availed -->
             <div class="mb-3">
-                <label for="total_leaves" class="form-label">Total Leaves</label>
+                <label for="total_leaves" class="form-label">Remaning Leaves</label>
                 <input type="number" id="total_leaves" name="total_leaves" class="form-control" 
                        value="<?php echo array_sum(array_column($existingLeaves, 'leave_count')); ?>" readonly>
             </div>
@@ -86,11 +86,11 @@ while ($row = mysqli_fetch_assoc($existingLeavesResult)) {
                 <input type="number" id="leaves_availed" name="leaves_availed" class="form-control" 
                        value="<?php echo $remaining_leaves['leaves_availed']; ?>" readonly>
             </div>
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label for="remaning_leaves" class="form-label">Remaning Leaves</label>
                 <input type="number" id="remaning_leaves" name="remaning_leaves" class="form-control" 
                        value="<?php echo array_sum(array_column($existingLeaves, 'leave_count')) - $remaining_leaves['leaves_availed']; ?>" readonly>
-            </div>
+            </div> -->
 
             <!-- Submit Button -->
             <div class="d-grid">

@@ -270,6 +270,9 @@ function handleEditLocationForm($conn) {
 // Handle Employee form
 function handleEmployeeForm($conn)
 {
+    // Key for encryption (must be securely stored)
+define('SECRET_KEY', 'ifhi4984rb4uybfuiwyfro34ybcsdcuyhb4uir7y4389rfbc89ryhfn4c948'); // Replace with a strong secret key
+define('SECRET_IV', 'sjo9ji3buybu&%F5##$vgujukhdicscbjckuekfjbkufhwebcjwuckjbkjb.ek'); // Replace with a strong secret IV
 
     $first_name = $_POST['first_name'] ?? '';
     $last_name = $_POST['last_name'] ?? '';
@@ -301,19 +304,26 @@ function handleEmployeeForm($conn)
                     move_uploaded_file($img_tmp, $img_path);
     }
         // Get the last employee code from the database
-        $result = $mysqli->query("SELECT MAX(employee_code) AS last_code FROM employee");
+        $result = $conn->query("SELECT MAX(employee_code) AS last_code FROM employee");
         $row = $result->fetch_assoc();
-        $lastCode = isset($row['last_code']) ? intval($row['last_code']) : 0000;
+        $lastCode = isset($row['last_code']) ? intval($row['last_code']) : 1000;
 
         // Generate the new employee code
         $newEmployeeCode = $lastCode + 1;
 
         // Generate a random password
         $password = bin2hex(random_bytes(8)); // Generates a 16-character random password
+        function encryptPassword($password) {
+            $encryption_key = base64_decode(SECRET_KEY);
+            $iv = substr(hash('sha256', SECRET_IV), 0, 16);
+            return openssl_encrypt($password, 'AES-256-CBC', $encryption_key, 0, $iv);
+        }
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // Hash the password
-    // Insert into employee table
-    $sql = "INSERT INTO employee (emp_image,last_leave,first_name, last_name, department_id, location_id, designation, company,supervisor_id,joining_date, dob, country, city, address1, address2, phone1, phone2, email1, email2,employee_code,password) 
-    VALUES ('$img_path','$last_leave','$first_name', '$last_name', '$department_id', '$location_id', '$designation', '$company','$supervisor_id','$date_of_join', '$date_of_birth', '$country', '$city', '$address1', '$address2', '$phone1', '$phone2', '$email1', '$email2','$newEmployeeCode','$hashedPassword')";
+        $encryptedPassword = encryptPassword($password);
+        // $encryptedPassword = $password;
+        // Insert into employee table
+    $sql = "INSERT INTO employee (emp_image,last_leave,first_name, last_name, department_id, location_id, designation, company,supervisor_id,joining_date, dob, country, city, address1, address2, phone1, phone2, email1, email2,employee_code,password,encrypted_password) 
+    VALUES ('$img_path','$last_leave','$first_name', '$last_name', '$department_id', '$location_id', '$designation', '$company','$supervisor_id','$date_of_join', '$date_of_birth', '$country', '$city', '$address1', '$address2', '$phone1', '$phone2', '$email1', '$email2','$newEmployeeCode','$hashedPassword','$encryptedPassword')";
 
 
     if ($conn->query($sql) === TRUE) {

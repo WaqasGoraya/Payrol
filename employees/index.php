@@ -2,15 +2,22 @@
 // Database connection
 require_once("../connection/conn.php");
 require_once("../sessions.php");
-
+  // Key for encryption (must be securely stored)
+  define('SECRET_KEY', 'ifhi4984rb4uybfuiwyfro34ybcsdcuyhb4uir7y4389rfbc89ryhfn4c948'); // Replace with a strong secret key
+  define('SECRET_IV', 'sjo9ji3buybu&%F5##$vgujukhdicscbjckuekfjbkufhwebcjwuckjbkjb.ek'); // Replace with a strong secret IV
+  
 // Fetch employees data
-$sql = "SELECT employee.id, employee.first_name, employee.last_name,employee.emp_status, departments.name as department_name, locations.name as location_name 
+$sql = "SELECT employee.id,employee.employee_code,employee.encrypted_password, employee.first_name, employee.last_name,employee.emp_status, departments.name as department_name, locations.name as location_name 
         FROM employee
         LEFT JOIN departments ON employee.department_id = departments.id
         LEFT JOIN locations ON employee.location_id = locations.id";
 $result = $conn->query($sql);
 
-
+function decryptPassword($encrypted_password) {
+    $encryption_key = base64_decode(SECRET_KEY);
+    $iv = substr(hash('sha256', SECRET_IV), 0, 16);
+    return openssl_decrypt($encrypted_password, 'AES-256-CBC', $encryption_key, 0, $iv);
+}
 // Delete Employee
 // Check if delete_id is set in the URL
 if (isset($_GET['delete_id'])) {
@@ -94,7 +101,8 @@ if (isset($_GET['delete_id'])) {
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
+                            <th>Code</th>
+                            <th>Password</th>
                             <th>Status</th>
                             <th>First Name</th>
                             <th>Last Name</th>
@@ -107,12 +115,14 @@ if (isset($_GET['delete_id'])) {
                         <?php
                         if ($result->num_rows > 0) {
                             while ($row = $result->fetch_assoc()) {
+                                $originalPassword = decryptPassword($row['encrypted_password']);
                                 $status = 'Active';
                                 if($row['emp_status'] == 0){
                                     $status = 'Inactive';
                                 }
                                 echo "<tr>
-                                        <td>{$row['id']}</td>
+                                        <td>{$row['employee_code']}</td>
+                                        <td>{$originalPassword}</td>
                                         <td>{$status}</td>
                                         <td>{$row['first_name']}</td>
                                         <td>{$row['last_name']}</td>
@@ -128,7 +138,7 @@ if (isset($_GET['delete_id'])) {
                                       </tr>";
                             }
                         } else {
-                            echo "<tr><td colspan='6' class='text-center'>No records found</td></tr>";
+                            echo "<tr><td colspan='8' class='text-center'>No records found</td></tr>";
                         }
                         ?>
                     </tbody>

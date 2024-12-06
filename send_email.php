@@ -76,7 +76,7 @@ function email_notification($to, $subject, $message){
 
         // Send the email
         $mail->send();
-        echo 'Email has been sent.';
+        return true;
     } catch (Exception $e) {
         echo "Email could not be sent. Mailer Error: {$mail->ErrorInfo}";
     } 
